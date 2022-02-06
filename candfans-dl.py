@@ -29,12 +29,10 @@ def create_auth() -> dict:
         "Accept-Encoding": "gzip, deflate",
         'X-Xsrf-Token': ljson['X-Xsrf-Token'],
     }
-    
 
 # get download url
 
 def api_request(endpoint: str, getdata=None, postdata=None, getparams=None) -> requests.Response:
-
     return requests.get(URL + endpoint,
                         headers=create_auth(),
                         params=getparams,
