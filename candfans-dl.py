@@ -4,7 +4,14 @@ import shutil
 import sys
 import requests
 
+
+# change by your userid
+USERID = ''
+
+# do not change
 URL = 'https://candfans.jp/api'
+
+# do not change
 CONTENT_URL = 'https://fanty-master-storage.s3.ap-northeast-1.amazonaws.com'
 
 def assure_dir(path: str) -> None:
@@ -12,8 +19,6 @@ def assure_dir(path: str) -> None:
         os.mkdir(path)
 
 def create_auth() -> dict:
-    if os.path.isfile('auth.json')
-    
     with open('auth.json') as f:
         ljson = json.load(f)
     
@@ -30,18 +35,14 @@ def create_auth() -> dict:
 
 def api_request(endpoint: str, getdata=None, postdata=None, getparams=None) -> requests.Response:
 
-    headers = create_auth()
-    
     return requests.get(URL + endpoint,
-                        headers=header,
+                        headers=create_auth(),
                         params=getparams,
                         )
 
 # get all following people in json
 def get_follow() -> dict:
-    USER_ID = USERID
-    
-    return api_request('/user/get-follow/297518').json()['data']
+    return api_request(f'/user/get-follow/{USERID}').json()['data']
 
 def select_sub() -> list['str']:
     # Get Subscriptions
@@ -81,8 +82,8 @@ def download_file(source: str, profile: str, path: str) -> None:
                      headers={
                          'User-Agent': ''
                      })
-
-    with open(f'profiles/{profile}/{path}', 'wb') as f:
+    
+    with open(f'profiles/{profile}/photos/{path}', 'wb') as f:
         r.raw.decode_content = True
         shutil.copyfileobj(r.raw, f)
 
@@ -98,7 +99,7 @@ def get_content_paths(post: dict) -> list[str]:
         post['contents_path4'],
     ]
     
-    return [_ for _ in content_path if content_path != '']
+    return [_ for _ in content_path if _ != '']
 
 def get_all_photos(user_id: str):
     has_more_page = True
@@ -128,9 +129,26 @@ def get_all_photos(user_id: str):
         page += 1
 
 if __name__ == '__main__':
-    print('\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
-    print('hi,')
-    print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n')
+    print('\n')
+    print(
+    """
+                                                                    ,--,              
+                        ,---,                                      ,--.'|              
+                        ,---.'|      ,---,                      ,--, |  | :              
+        ,--,  ,--,     |   | :  ,-+-. /  |                   ,'_ /| :  : '              
+        |'. \/ .`|     |   | | ,--.'|'   |  ,--.--.     .--. |  | : |  ' |        .--,  
+        '  \/  / ;   ,--.__| ||   |  ,"' | /       \  ,'_ /| :  . | '  | |      /_ ./|  
+        \  \.' /   /   ,'   ||   | /  | |.--.  .-. | |  ' | |  . . |  | :   , ' , ' :  
+        \  ;  ;  .   '  /  ||   | |  | | \__\/: . . |  | ' |  | | '  : |__/___/ \: |  
+        / \  \  \ '   ; |:  ||   | |  |/  ," .--.; | :  | : ;  ; | |  | '.'|.  \  ' |  
+        ./__;   ;  \|   | '/  '|   | |--'  /  /  ,.  | '  :  `--'   \;  :    ; \  ;   :  
+        |   :/\  \ ;|   :    :||   |/     ;  :   .'   \:  ,      .-./|  ,   /   \  \  ;  
+        `---'  `--`  \   \  /  '---'      |  ,     .-./ `--`----'     ---`-'     :  \  \ 
+                    `----'               `--`---'                               \  ' ; 
+                                                                                `--`
+    """
+    )
+    print('\n')
     
     # Gather inputs
     if len(sys.argv) != 2:
