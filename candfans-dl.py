@@ -25,10 +25,9 @@ def create_auth() -> dict:
     return {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36',
         "Accept": "application/json, text/plain, */*",
-        "Cookie": 'lang=ja; app_id=Kxgg5ffdAy56wP9ziXeVrBMyDoP4NAASOR2cOQqeksd95c0wJv; XSRF-TOKEN=eyJpdiI6IitMZnJuWmR1b3R4MEFXWVB4eGNTelE9PSIsInZhbHVlIjoidkNNVzZpcDA4TmJ1bmdmOFVyRjd1ZVNoa1Zlc0VrYzhqeGE3UG9PNytlUFBFcXpETTIxdlROVmsrN3lDaFdLcU1WYzNtRGhPSE1YdTNBYjRiZWRrUW1WKzhLcFRXY1hsT252dFltK3hTSlBLUDdCeUVUQkJKb1dRZmNmc1pEOEkiLCJtYWMiOiJlNjRjN2UzOWNmMmUzYjlmNGFlYWU4N2U1YzQ1OTEzNDE1NmY5MTUwMjFkMWY1NTc1NmMzZTU1MDg2M2ZiZTNlIiwidGFnIjoiIn0%3D; candfans_session=eyJpdiI6Ii9TWEpuNmZvK1JqRGJDa1VCNXBLMFE9PSIsInZhbHVlIjoiR2twS3E5UkFhUGR3bXpZMXd1djZoMWNMOHQzaDFxd0JqUU5jSWdVZ3Y3ZGNYUS9pV1F1citQRG42Q1BqMG5OYm4yRjkvbmY2Q1dxTy92VDZvaTU4S2oydW5BTGZTbjU5dGlvZnhmVFRDRHREL1o5YmxGVkZxSUQ4c2xBbHQwVUsiLCJtYWMiOiI1NzZkMDk4MmRiZjM3N2ExM2Y0ZTBlYTc0NTNkNWQyMTU4ZWYyZTVlNDNkZTBlM2Y1NGRjZmQyNzNhMTkzZTNhIiwidGFnIjoiIn0%3D',
+        "Cookie": '',
         "Accept-Encoding": "gzip, deflate",
-        'X-Xsrf-Token': 'eyJpdiI6IitMZnJuWmR1b3R4MEFXWVB4eGNTelE9PSIsInZhbHVlIjoidkNNVzZpcDA4TmJ1bmdmOFVyRjd1ZVNoa1Zlc0VrYzhqeGE3UG9PNytlUFBFcXpETTIxdlROVmsrN3lDaFdLcU1WYzNtRGhPSE1YdTNBYjRiZWRrUW1WKzhLcFRXY1hsT252dFltK3hTSlBLUDdCeUVUQkJKb1dRZmNmc1pEOEkiLCJtYWMiOiJlNjRjN2UzOWNmMmUzYjlmNGFlYWU4N2U1YzQ1OTEzNDE1NmY5MTUwMjFkMWY1NTc1NmMzZTU1MDg2M2ZiZTNlIiwidGFnIjoiIn0=',
-    }
+        'X-Xsrf-Token': ''  }
     
 
 # get download url
