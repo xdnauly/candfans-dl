@@ -28,6 +28,7 @@ def create_auth() -> dict:
         'Referer': 'https://candfans.jp',
     }
 
+# get download url
 def api_request(endpoint: str, getparams=None) -> requests.Response:
     return requests.get(URL + endpoint, 
                         headers=create_auth(),
