@@ -1,17 +1,14 @@
 import json
 import os
 import shutil
-import sys
 import requests
 
-
 # change by your userid
-USERID = ''
+
+USERID = ""
 
 # do not change
 URL = 'https://candfans.jp/api'
-
-# do not change
 CONTENT_URL = 'https://fanty-master-storage.s3.ap-northeast-1.amazonaws.com'
 
 def assure_dir(path: str) -> None:
@@ -23,23 +20,21 @@ def create_auth() -> dict:
         ljson = json.load(f)
     
     return {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36',
+        'User-Agent': ljson['User-Agent'],
         "Accept": "application/json, text/plain, */*",
-        "Cookie": '',
+        "Cookie": ljson['Cookie'],
         "Accept-Encoding": "gzip, deflate",
-        'X-Xsrf-Token': ''  }
-    
+        'X-Xsrf-Token': ljson['X-Xsrf-Token'],
+        'Referer': 'https://candfans.jp',
+    }
 
 # get download url
-
-def api_request(endpoint: str, getdata=None, postdata=None, getparams=None) -> requests.Response:
-
-    return requests.get(URL + endpoint,
+def api_request(endpoint: str, getparams=None) -> requests.Response:
+    return requests.get(URL + endpoint, 
                         headers=create_auth(),
                         params=getparams,
                         )
 
-# get all following people in json
 def get_follow() -> dict:
     return api_request(f'/user/get-follow/{USERID}').json()['data']
 
@@ -54,20 +49,13 @@ def select_sub() -> list['str']:
         ALL_LIST.append(i)
     
     for i in range(0, len(SUBS)):
-        sub_dict.update({
-            i+1: SUBS[i]['username']
-        })
-        
-        sub_userid_dict.update({
-            i+1: SUBS[i]['user_id']
-        })
+        sub_dict.update({i+1: SUBS[i]['username']})
+        sub_userid_dict.update({i+1: SUBS[i]['user_id']})
     
     if len(sub_dict) == 1:
         print('No models subbed')
         exit()
     
-    if ARG1 == 'ALL':
-        return ALL_LIST
     MODELS = str((input('\n'.join('{} | {}'.format(key, value) for key, value in sub_dict.items()) + "\nEnter number to download model\n")))
     
     if MODELS == '0':
@@ -76,12 +64,9 @@ def select_sub() -> list['str']:
         return [x.strip() for x in MODELS.split(',')]
 
 def download_file(source: str, profile: str, path: str) -> None:
-    r = requests.get(source, 
-                     stream=True,
-                     headers={
-                         'User-Agent': ''
-                     })
+    r = requests.get(source, stream=True)
     
+    print(source)
     with open(f'profiles/{profile}/photos/{path}', 'wb') as f:
         r.raw.decode_content = True
         shutil.copyfileobj(r.raw, f)
@@ -90,7 +75,6 @@ def get_photo_url(content_path: str) -> str:
     return CONTENT_URL + content_path
 
 def get_content_paths(post: dict) -> list[str]:
-    # 
     content_path = [
         post['contents_path1'],
         post['contents_path2'],
@@ -114,13 +98,12 @@ def get_all_photos(user_id: str):
         # begin download photos 
         for photo in photos:
             # skip the unaviable img
-            if photo['can_browsing'] == 0 or photo['contents_type'] != 1:
-                continue
-            
-            username = photo['username']
-            for content_path in get_content_paths(photo):
-                path = content_path.split('/')[-1]
-                download_file(source=get_photo_url(content_path), profile=username, path=path)
+            if not photo['can_browsing'] == 0:
+                username = photo['username']
+                for content_path in get_content_paths(photo):
+                    path = content_path.split('/')[-1]
+                    if not os.path.isfile(f'profiles/{username}/photos/{path}'):
+                        download_file(source=get_photo_url(content_path), profile=username, path=path)
         
         if len(photos) == 0:
             has_more_page = False
@@ -147,14 +130,7 @@ if __name__ == '__main__':
                                                                                 `--`
     """
     )
-    print('\n')
-    
-    # Gather inputs
-    if len(sys.argv) != 2:
-        ARG1 = ''
-    else:
-        ARG1 = sys.argv[1]
-    
+
     sub_dict = {}
     sub_userid_dict = {}
 
