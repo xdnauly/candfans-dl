@@ -17,5 +17,3 @@
     "X-Xsrf-Token": "",
     "USERID": ""
 }
-```
-
