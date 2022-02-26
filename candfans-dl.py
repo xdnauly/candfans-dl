@@ -3,9 +3,6 @@ import os
 import shutil
 import requests
 
-# change by your userid
-
-USERID = ""
 
 # do not change
 URL = 'https://candfans.jp/api'
@@ -36,7 +33,11 @@ def api_request(endpoint: str, getparams=None) -> requests.Response:
                         )
 
 def get_follow() -> dict:
-    return api_request(f'/user/get-follow/{USERID}').json()['data']
+    user_info = api_request('/user/get-user-mine').json()
+    
+    user_id = user_info['data']['users'][0]['id']
+    
+    return api_request(f'/user/get-follow/{user_id}').json()['data']
 
 def select_sub() -> list['str']:
     # Get Subscriptions
@@ -114,20 +115,6 @@ if __name__ == '__main__':
     print('\n')
     print(
     """
-                                                                    ,--,              
-                        ,---,                                      ,--.'|              
-                        ,---.'|      ,---,                      ,--, |  | :              
-        ,--,  ,--,     |   | :  ,-+-. /  |                   ,'_ /| :  : '              
-        |'. \/ .`|     |   | | ,--.'|'   |  ,--.--.     .--. |  | : |  ' |        .--,  
-        '  \/  / ;   ,--.__| ||   |  ,"' | /       \  ,'_ /| :  . | '  | |      /_ ./|  
-        \  \.' /   /   ,'   ||   | /  | |.--.  .-. | |  ' | |  . . |  | :   , ' , ' :  
-        \  ;  ;  .   '  /  ||   | |  | | \__\/: . . |  | ' |  | | '  : |__/___/ \: |  
-        / \  \  \ '   ; |:  ||   | |  |/  ," .--.; | :  | : ;  ; | |  | '.'|.  \  ' |  
-        ./__;   ;  \|   | '/  '|   | |--'  /  /  ,.  | '  :  `--'   \;  :    ; \  ;   :  
-        |   :/\  \ ;|   :    :||   |/     ;  :   .'   \:  ,      .-./|  ,   /   \  \  ;  
-        `---'  `--`  \   \  /  '---'      |  ,     .-./ `--`----'     ---`-'     :  \  \ 
-                    `----'               `--`---'                               \  ' ; 
-                                                                                `--`
     """
     )
 

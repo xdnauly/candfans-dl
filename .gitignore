@@ -1,3 +1,5 @@
 profiles/
 venv/
 auth.json
+*.ipynb
+.ipynb_checkpoints/
