@@ -3,3 +3,6 @@ venv/
 auth.json
 *.ipynb
 .ipynb_checkpoints/
+__pycache__/
+utils.py
+.idea/

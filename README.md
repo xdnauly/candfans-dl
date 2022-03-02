@@ -13,7 +13,5 @@
     "User-Agent": "",
     "Accept": "application/json, text/plain, */*",
     "Cookie": "",
-    "Accept-Encoding": "gzip, deflate",
     "X-Xsrf-Token": "",
-    "USERID": ""
 }
