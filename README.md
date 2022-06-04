@@ -16,7 +16,9 @@ Simply scrape / download all the media from an candfans account
     ![session](./images/file.jpg)
 
 2. Create auth.json file and fill in value.
+
     ![auth.json](./images/file.PNG)
+
     ![auth.json](./images/auth.PNG)
 
 3. `python .\candfans-dl.py`
