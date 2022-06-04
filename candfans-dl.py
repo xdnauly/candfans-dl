@@ -3,6 +3,7 @@ import json
 import os
 import pathlib
 import requests
+import sys
 
 
 class Candfans(object): # noqa
@@ -19,10 +20,10 @@ class Candfans(object): # noqa
 
         self.sess.headers['X-Xsrf-Token'] = ljson['X-Xsrf-Token']
         self.sess.headers['Cookie'] = ljson['Cookie']
-        self.sess.headers['User-Agent'] = ljson['User-Agent']
-
+        self.sess.headers['Accept-Encoding'] = "gzip, deflate"
         self.sess.headers['Accept'] = 'application/json, text/plain, */*'
         self.sess.headers['Referer'] = 'https://candfans.jp/'
+        self.sess.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36'
 
     # shorten
     def get(self, path: str, params: dict | None = None) -> requests.Response:
@@ -35,7 +36,6 @@ class Candfans(object): # noqa
     # get user's id
     def get_user_id(self) -> int:
         user_info = self.get('/user/get-user-mine').json()
-
         return user_info['data']['users'][0]['id']
 
     # get user's all subscriptions
@@ -53,16 +53,19 @@ class Candfans(object): # noqa
             exit()
 
         all_models = {}
-        print('0 | *** Download All Models ***')
+        print('0  |  *** Download All Models ***')
         for i, sub in enumerate(subs):
-            print(f'{i + 1} | {sub["username"]}')
+            print(f'{i + 1}  |  {sub["username"]}')
             all_models.update({str(i + 1): sub['user_id']})
+        print('-1 |  quit')
 
         model = str(input('\nEnter number to download model: '))
 
         result = []
         if model == '0':
             result.extend(all_models.values())
+        elif model == '-1':
+            sys.exit()
         elif model in all_models:
             result.append(all_models.get(model))
         else:
@@ -131,6 +134,5 @@ class Candfans(object): # noqa
 
     def dl(self):
         self.select_subscription()
-
 
 Candfans().dl()
