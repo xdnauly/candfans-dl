@@ -13,6 +13,7 @@ Simply scrape / download all the media from an candfans account
 ## ⚡ Quick Start
 
 1. Open browser find out the Cookie and X-Xsrf-Token.
+
     ![session](./images/file.jpg)
 
 2. Create auth.json file and fill in value.
