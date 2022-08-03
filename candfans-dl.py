@@ -1,138 +1,231 @@
-import shutil
+import functools
+import itertools
+import math
 import json
-import os
 import pathlib
-import requests
-import sys
+import httpx
+import asyncio
+import datetime as dt
 
+from typing import Any, Dict, List, Set, Tuple, Coroutine
 
-class Candfans(object): # noqa
-    URL = 'https://candfans.jp/api'
-    CONTENT_URL = 'https://fanty-master-storage.s3.ap-northeast-1.amazonaws.com'
-    sess = requests.Session()
-    sub_dict = {}
+# DO NOT CHANGE 
+URL = 'https://candfans.jp/api'
+CONTENT_URL = 'https://fanty-master-storage.s3.ap-northeast-1.amazonaws.com'
+# do not change
+PROFILE = ''
+FILES: Set[str] = set()
+DOWNLOAD_TASKS: List[Any] = []
+# asyncio limit
+URL_LIMIT = 10
 
-    def __init__(self):
-        assert pathlib.Path('auth.json').is_file()
+# Your user-agent
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36"
 
-        with open('auth.json') as f:
-            ljson = json.load(f)
+@functools.cache
+def create_header() -> Dict[str, str]:
+    with open('auth.json') as f:
+        ljson = json.load(f)
 
-        self.sess.headers['X-Xsrf-Token'] = ljson['X-Xsrf-Token']
-        self.sess.headers['Cookie'] = ljson['Cookie']
-        self.sess.headers['Accept-Encoding'] = "gzip, deflate"
-        self.sess.headers['Accept'] = 'application/json, text/plain, */*'
-        self.sess.headers['Referer'] = 'https://candfans.jp/'
-        self.sess.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36'
+    return {
+        'Cookie': ljson['Cookie'],
+        'X-Xsrf-Token': ljson['X-Xsrf-Token'],
+        'User-Agent': USER_AGENT,
+        'referer': 'https://candfans.jp/'
+    }
 
-    # shorten
-    def get(self, path: str, params: dict | None = None) -> requests.Response:
-        return self.sess.get(f'{self.URL}{path}', params=params)
+# https://candfans.jp/api/user/get-user-mine
+def get_user_mine() -> Tuple[int, str]:
+    user_data = httpx.get(url=f'{URL}/user/get-user-mine',
+                          headers=create_header()
+                          ).json()['data']['users'][0]
+    
+    return user_data['id'], user_data['user_code']
 
-    # shorten
-    def post(self, path: str, data: dict = None) -> requests.Response:
-        return self.sess.post(f'{self.URL}/{path}', data=data)
+# https://candfans.jp/api/user/get-users?user_code={user_code}
+def get_user(user_code: str) -> Dict:
+    return httpx.get(url=f'{URL}/user/get-users?user_code={user_code}',
+                     headers=create_header()
+                     ).json()['data']['user']
 
-    # get user's id
-    def get_user_id(self) -> int:
-        user_info = self.get('/user/get-user-mine').json()
-        return user_info['data']['users'][0]['id']
+def get_subscriptions(userinfo: Tuple[int, str]) -> List[Dict[str, Any]]:
+    user_id, user_code = userinfo
+    
+    follow_cnt: int = get_user(user_code)['follow_cnt']
+    
+    subscriptions: List[Dict[str, Any]] = []
+    for i in range(1, math.ceil(follow_cnt / 10) + 1):
+        # https://candfans.jp/api/user/get-follow/{user_id}?page={i}
+        sub = httpx.get(url=f'{URL}/user/get-follow/{user_id}',
+                                 headers=create_header(),
+                                 params={
+                                     'page': i,
+                                 }
+                                 ).json()['data']
 
-    # get user's all subscriptions
-    def get_subscriptions(self, user_id: int) -> dict:
+        subscriptions.extend(sub)
+    
+    return subscriptions
 
-        return self.get(f'/user/get-follow/{user_id}').json()['data']
+def select_subscription() -> None:
+    user_info = get_user_mine()
+    subs = get_subscriptions(user_info)
 
-    # chose model to download
-    def select_subscription(self) -> None:
-        user_id = self.get_user_id()
-        subs = self.get_subscriptions(user_id)
+    if len(subs) == 0:
+        print('No models subbed')
+        exit()
 
-        if len(subs) == 0:
-            print('No models subbed')
-            exit()
+    all_models: Dict[str, str] = {}
+    # TODO fix enter 0 download all.
+    print('0  |  *** Quit ***')
+    for i, sub in enumerate(subs):
+        print(f'{i + 1}  |  {sub["username"]}')
+        all_models.update({str(i + 1): sub['user_id']})
+    print('q |  quit')
 
-        all_models = {}
-        print('0  |  *** Download All Models ***')
-        for i, sub in enumerate(subs):
-            print(f'{i + 1}  |  {sub["username"]}')
-            all_models.update({str(i + 1): sub['user_id']})
-        print('-1 |  quit')
+    model = str(input('\nEnter number to download model: '))
 
-        model = str(input('\nEnter number to download model: '))
+    result: List[str] = []
+    if model == '0':
+        # TODO
+        exit()
+        
+    elif username := all_models.get(model):
+        result.append(username)
+        
+    elif model == 'q':
+        print('quit!')
+        exit()
+    else:
+        raise ValueError(f'The {model} is not correct number.')
 
-        result = []
-        if model == '0':
-            result.extend(all_models.values())
-        elif model == '-1':
-            sys.exit()
-        elif model in all_models:
-            result.append(all_models.get(model))
-        else:
-            exit()
-
-        for profile_id in result:
-            PROFILE = subs[int(model) - 1]['username'] # noqa
-            self.assure_dir("profiles")
-            self.assure_dir("profiles/" + PROFILE)
-            self.assure_dir("profiles/" + PROFILE + "/photos")
-            self.assure_dir("profiles/" + PROFILE + "/videos")
-            print(f'\nYou are downloading {PROFILE}\'s photos and videos')
-            print()
-            self.get_all_photos(profile_id)
-
-    def get_all_photos(self, user_id: int):
-        has_more_page = True
-        page = 0
-        while has_more_page:
-            photos = self.get('/contents/get-timeline',
-                              params={'user_id': user_id,
-                                      'page': page
-                                      }).json()['data']
-
-            # begin download photos
-            for photo in photos:
-                if not photo['can_browsing'] == 0:
-                    username = photo['username']
-                    for content_path in self.get_content_paths(photo):
-                        path = content_path.split('/')[-1]
-                        if not os.path.isfile(f'profiles/{username}/photos/{path}'):
-                            self.download_file(source=self.photo_url(content_path), profile=username, path=path)
-
-            if len(photos) == 0:
-                has_more_page = False
-
-            page += 1
-
-    def photo_url(self, content_path: str) -> str:
-        return self.CONTENT_URL + content_path
-
-    @staticmethod
-    def download_file(source: str, profile: str, path: str) -> None:
-        print(f'{profile} | {path}')
-        r = requests.get(source, stream=True)
-
-        with open(f'profiles/{profile}/photos/{path}', 'wb') as f:
-            r.raw.decode_content = True
-            shutil.copyfileobj(r.raw, f)
-
-    @staticmethod
-    def get_content_paths(model_post: dict) -> list[str]:
-        content_path = [
-            model_post['contents_path1'],
-            model_post['contents_path2'],
-            model_post['contents_path3'],
-            model_post['contents_path4'],
+    for user_id in result:
+        global PROFILE
+        PROFILE = subs[int(model) - 1]['username']  # noqa
+        assure_dir("profiles")
+        assure_dir("profiles/" + PROFILE)
+        assure_dir("profiles/" + PROFILE + '/info')
+        assure_dir("profiles/" + PROFILE + '/photos')
+        assure_dir("profiles/" + PROFILE + '/videos')
+        print(f'\nYou are downloading {PROFILE}\'s photos and videos\n')
+        
+        user_code = subs[int(model) - 1]['user_code']
+        userinfo: Dict[str, Any] = get_user(user_code)
+        info = {
+            'profile_text': userinfo['profile_text'],
+            'username': userinfo['username'],
+            'user_code': userinfo['user_code'],
+            'id': userinfo['id'],
+            'image_cnt': userinfo['image_cnt'],
+            'movie_cnt': userinfo['movie_cnt'],
+            'post_cnt': userinfo['post_cnt'],
+            'follow_cnt': userinfo['follow_cnt'],
+            'like_cnt': userinfo['like_cnt'],
+        }
+        with open("profiles/" + PROFILE + '/info/' + 'info.json', 'w') as f:
+            json.dump(info, f)
+        
+        img_urls = [
+            userinfo['apeal_img1'],
+            userinfo['apeal_img2'],
+            userinfo['apeal_img2'],
+            userinfo['profile_cover_img'],
+            userinfo['profile_img'],
         ]
+        tasks = []
+        for img_url in img_urls:
+            if img_url != '':
+                file_name = img_url.split('/')[-1]
+                tasks.append(async_download_file(f'{CONTENT_URL}{img_url}', file_name, 'info'))
+        asyncio.run(async_download(tasks))
 
-        return [_ for _ in content_path if _ != '']
+        global FILES
+        FILES.clear()
+        for file in itertools.chain(pathlib.Path("profiles/" + PROFILE + '/photos').iterdir(),
+                                    pathlib.Path("profiles/" + PROFILE + '/videos').iterdir(),
+                                    ):
+            FILES.add(file.name)
 
-    @staticmethod
-    def assure_dir(path: str) -> None:
-        if not os.path.isdir(path):
-            os.mkdir(path)
+        print(f'Staring  at {dt.datetime.now()}')
 
-    def dl(self):
-        self.select_subscription()
+        new, total = get_all_photos(user_id, user_code)
+        
+        print(f'Finishing at {dt.datetime.now()}')
+        print(f'Download new {new} files, {total - new} exists')
+        
+def get_all_photos(user_id: str, user_code: str) -> Tuple[int, int]:
+    post_cnt: int = get_user(user_code)['post_cnt']
+    
+    count = 0
+    for i in range(1, math.ceil(post_cnt / 20) + 1):
+        posts = httpx.get(url=f'{URL}/contents/get-timeline',
+                          headers=create_header(),
+                          params={'user_id': user_id,
+                                  'page': i
+                                  }).json()['data']
 
-Candfans().dl()
+        for post in posts:
+            # 1: you can | 0: you can't
+            if post['can_browsing'] == 0:
+                continue
+            
+            for content_path in get_content_paths(post):
+                # /user/{user_id}/profile_cover/{filename}.jpg
+                file_name = content_path.split('/')[-1]
+                if file_name in FILES:
+                    pass
+                elif len(DOWNLOAD_TASKS) < 5:
+                    DOWNLOAD_TASKS.append(async_download_file(
+                        source=f'{CONTENT_URL}{content_path}',
+                        file_name=file_name,
+                        filetype='photos' if is_picture(file_name) else 'videos'
+                    ))
+                    count += 1
+                else:
+
+                    asyncio.run(async_download(DOWNLOAD_TASKS.copy()))
+                    DOWNLOAD_TASKS.clear()
+    
+    return count, post_cnt
+    
+# TODO this code is ugly
+async def async_download(lst: list):
+    await asyncio.gather(*lst)
+
+def assure_dir(path: str) -> None:
+    if not pathlib.Path(path).is_dir():
+        pathlib.Path(path).mkdir()
+
+async def async_download_file(source: str, file_name: str, filetype: str):
+    with open("profiles/" + PROFILE + f'/{filetype}/' + file_name, 'wb') as f:
+        async with httpx.AsyncClient(timeout=None,) as client:
+            async with client.stream('GET',
+                                     source,
+                                     headers={
+                                         'User-Agent': USER_AGENT,
+                                         'Accept-Encoding': 'gzip, deflate, br'
+                                     }) as r:
+                async for chunk in r.aiter_bytes():
+                    f.write(chunk)
+
+def is_picture(file_name: str) -> bool:
+    suffixes = ['jpg', 'png', 'jpeg', 'gif', 'webp', 'cr2', 'tif', 'bmp', 'jxr', 'psd', 'ico']
+    
+    for suffix in suffixes:
+        if file_name.endswith(suffix):
+            return True
+    
+    return False
+
+def get_content_paths(post: Dict) -> List[str]:
+    paths = [
+        post['contents_path1'],
+        post['contents_path2'],
+        post['contents_path3'],
+        post['contents_path4'],
+    ]
+    
+    return [path for path in paths if path != '']
+
+if __name__ == '__main__':
+    select_subscription()
