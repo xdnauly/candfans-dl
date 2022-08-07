@@ -21,6 +21,8 @@ Only support python 3.9 | 3.10 | 3.11
 1. install httpx
 
     `pip install httpx`
+    
+    `pip install tqdm`
 
 2. Open browser find out the Cookie and X-Xsrf-Token.
     ![session](./images/file.jpg)
@@ -45,3 +47,4 @@ Only support python 3.9 | 3.10 | 3.11
 
 - imporve async method
 - choose more than one model everytime
+- imporve process bar

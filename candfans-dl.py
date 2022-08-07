@@ -6,6 +6,7 @@ import pathlib
 import httpx
 import asyncio
 import datetime as dt
+from tqdm import tqdm
 
 from typing import Any, Dict, List, Set, Tuple, Coroutine
 
@@ -17,7 +18,7 @@ PROFILE = ''
 FILES: Set[str] = set()
 DOWNLOAD_TASKS: List[Any] = []
 # asyncio limit
-URL_LIMIT = 10
+URL_LIMIT = 6
 
 # Your user-agent
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36"
@@ -157,7 +158,9 @@ def get_all_photos(user_id: str, user_code: str) -> Tuple[int, int]:
     post_cnt: int = get_user(user_code)['post_cnt']
     
     count = 0
-    for i in range(1, math.ceil(post_cnt / 20) + 1):
+    post_range = tqdm(range(1, math.ceil(post_cnt / 20) + 1), unit='posts')
+    for i in post_range:
+        
         posts = httpx.get(url=f'{URL}/contents/get-timeline',
                           headers=create_header(),
                           params={'user_id': user_id,
