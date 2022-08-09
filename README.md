@@ -14,6 +14,7 @@ Only support python 3.9 | 3.10 | 3.11
 
 ```
     httpx
+    tqdm
 ```
 
 ## ⚡ Quick Start
@@ -21,7 +22,7 @@ Only support python 3.9 | 3.10 | 3.11
 1. install httpx
 
     `pip install httpx`
-    
+
     `pip install tqdm`
 
 2. Open browser find out the Cookie and X-Xsrf-Token.

@@ -17,8 +17,11 @@ CONTENT_URL = 'https://fanty-master-storage.s3.ap-northeast-1.amazonaws.com'
 PROFILE = ''
 FILES: Set[str] = set()
 DOWNLOAD_TASKS: List[Any] = []
+
+ILLEGAL_FILENAME_CHARS = ['\\', ':', '/', ':', '?', '*', '"', '<', '>', '|']
+                
 # asyncio limit
-URL_LIMIT = 6
+URL_LIMIT = 4
 
 # Your user-agent
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36"
@@ -103,6 +106,14 @@ def select_subscription() -> None:
     for user_id in result:
         global PROFILE
         PROFILE = subs[int(model) - 1]['username']  # noqa
+        # remove illegal char
+        if any([ch in PROFILE for ch in ILLEGAL_FILENAME_CHARS]):
+            new_profile = []
+            for c in PROFILE:
+                if c not in ILLEGAL_FILENAME_CHARS:
+                    new_profile.append(c)
+            PROFILE = ''.join(new_profile)
+        
         assure_dir("profiles")
         assure_dir("profiles/" + PROFILE)
         assure_dir("profiles/" + PROFILE + '/info')
@@ -158,37 +169,40 @@ def get_all_photos(user_id: str, user_code: str) -> Tuple[int, int]:
     post_cnt: int = get_user(user_code)['post_cnt']
     
     count = 0
-    post_range = tqdm(range(1, math.ceil(post_cnt / 20) + 1), unit='posts')
-    for i in post_range:
-        
-        posts = httpx.get(url=f'{URL}/contents/get-timeline',
-                          headers=create_header(),
-                          params={'user_id': user_id,
-                                  'page': i
-                                  }).json()['data']
+    with tqdm(total=post_cnt, unit='posts', desc='posts') as pbar:
+        for i in range(1, math.ceil(post_cnt / 20) + 1):
+            posts = httpx.get(url=f'{URL}/contents/get-timeline',
+                            headers=create_header(),
+                            params={'user_id': user_id,
+                                    'page': i
+                                    }).json()['data']
 
-        for post in posts:
-            # 1: you can | 0: you can't
-            if post['can_browsing'] == 0:
-                continue
-            
-            for content_path in get_content_paths(post):
-                # /user/{user_id}/profile_cover/{filename}.jpg
-                file_name = content_path.split('/')[-1]
-                if file_name in FILES:
-                    pass
-                elif len(DOWNLOAD_TASKS) < 5:
-                    DOWNLOAD_TASKS.append(async_download_file(
-                        source=f'{CONTENT_URL}{content_path}',
-                        file_name=file_name,
-                        filetype='photos' if is_picture(file_name) else 'videos'
-                    ))
-                    count += 1
-                else:
+            for post in posts:
+                pbar.update(1)
+                # 1: you can | 0: you can't
+                if post['can_browsing'] == 0:
+                    continue
+                
+                for content_path in get_content_paths(post):
+                    # /user/{user_id}/profile_cover/{filename}.jpg
+                    file_name = content_path.split('/')[-1]
+                    if file_name in FILES:
+                        pass
+                    elif len(DOWNLOAD_TASKS) < 5:
+                        DOWNLOAD_TASKS.append(async_download_file(
+                            source=f'{CONTENT_URL}{content_path}',
+                            file_name=file_name,
+                            filetype='photos' if is_picture(file_name) else 'videos'
+                        ))
+                        count += 1
+                    else:
+                        asyncio.run(async_download(DOWNLOAD_TASKS.copy()))
+                        DOWNLOAD_TASKS.clear()
 
-                    asyncio.run(async_download(DOWNLOAD_TASKS.copy()))
-                    DOWNLOAD_TASKS.clear()
-    
+        # finish rest 
+        if len(DOWNLOAD_TASKS) > 0:
+            asyncio.run(async_download(DOWNLOAD_TASKS))
+            DOWNLOAD_TASKS.clear()
     return count, post_cnt
     
 # TODO this code is ugly
