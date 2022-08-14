@@ -4,11 +4,14 @@ import math
 import json
 import pathlib
 import httpx
+import re
 import asyncio
 import datetime as dt
 from tqdm import tqdm
 
-from typing import Any, Dict, List, Set, Tuple, Coroutine
+from typing import Any, Dict, List, Set, Tuple
+from pydantic import BaseModel
+
 
 # DO NOT CHANGE 
 URL = 'https://candfans.jp/api'
@@ -25,6 +28,12 @@ URL_LIMIT = 4
 
 # Your user-agent
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36"
+
+# 
+class User(BaseModel):
+    user_id: str
+    user_code: str
+    username: str
 
 @functools.cache
 def create_header() -> Dict[str, str]:
@@ -71,6 +80,7 @@ def get_subscriptions(userinfo: Tuple[int, str]) -> List[Dict[str, Any]]:
     
     return subscriptions
 
+
 def select_subscription() -> None:
     user_info = get_user_mine()
     subs = get_subscriptions(user_info)
@@ -79,33 +89,40 @@ def select_subscription() -> None:
         print('No models subbed')
         exit()
 
-    all_models: Dict[str, str] = {}
+    all_models: Dict[str, User] = {}
     # TODO fix enter 0 download all.
-    print('0  |  *** Quit ***')
+    print('0  |  *** Download all ***')
     for i, sub in enumerate(subs):
         print(f'{i + 1}  |  {sub["username"]}')
-        all_models.update({str(i + 1): sub['user_id']})
+        all_models.update({str(i + 1): User(**sub)})
     print('q |  quit')
 
     model = str(input('\nEnter number to download model: '))
-
-    result: List[str] = []
+    selected_models: List[User] = []
+    # all selected
     if model == '0':
-        # TODO
-        exit()
-        
-    elif username := all_models.get(model):
-        result.append(username)
-        
+        selected_models.extend(all_models.values())
+    # single selected
+    elif user := all_models.get(model):
+        selected_models.append(user)
+    # group selected
+    elif re.match('(?:\d+,)+\d+)', model):
+        for m in model.split(','):
+            if u := all_models.get(m.strip()):
+                selected_models.append(u)
+    # quit
     elif model == 'q':
         print('quit!')
         exit()
     else:
         raise ValueError(f'The {model} is not correct number.')
 
-    for user_id in result:
+    for user in selected_models:
         global PROFILE
-        PROFILE = subs[int(model) - 1]['username']  # noqa
+        PROFILE = user.username
+        user_code = user.user_code
+        user_id = user.user_id
+        
         # remove illegal char
         if any([ch in PROFILE for ch in ILLEGAL_FILENAME_CHARS]):
             new_profile = []
@@ -121,7 +138,6 @@ def select_subscription() -> None:
         assure_dir("profiles/" + PROFILE + '/videos')
         print(f'\nYou are downloading {PROFILE}\'s photos and videos\n')
         
-        user_code = subs[int(model) - 1]['user_code']
         userinfo: Dict[str, Any] = get_user(user_code)
         info = {
             'profile_text': userinfo['profile_text'],
