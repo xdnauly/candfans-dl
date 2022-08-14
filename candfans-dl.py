@@ -47,6 +47,7 @@ def create_header() -> Dict[str, str]:
         'referer': 'https://candfans.jp/'
     }
 
+
 # https://candfans.jp/api/user/get-user-mine
 def get_user_mine() -> Tuple[int, str]:
     user_data = httpx.get(url=f'{URL}/user/get-user-mine',
@@ -106,13 +107,13 @@ def select_subscription() -> None:
     elif user := all_models.get(model):
         selected_models.append(user)
     # group selected
-    elif re.match('(?:\d+,)+\d+)', model):
+    elif re.match('(?:\d+,)+\d+', model):
         for m in model.split(','):
             if u := all_models.get(m.strip()):
                 selected_models.append(u)
     # quit
     elif model == 'q':
-        print('quit!')
+        print('quit')
         exit()
     else:
         raise ValueError(f'The {model} is not correct number.')

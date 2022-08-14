@@ -1,9 +1,5 @@
 # candfans-dl
 
-## ❗ Warning
-
-ダウンロードして頂いた作品（画像・動画）は著作権法によって保護されており、二次利用、無断転載、無断転売、複製、上映、その他第三者への公開・譲渡を一切禁じさせていただきます。
-
 ## 🎇 Introduction
 
 Inspired by onlyfans-dl.
@@ -15,15 +11,14 @@ Only support python 3.9 | 3.10 | 3.11
 ```
     httpx
     tqdm
+    pydantic
 ```
 
 ## ⚡ Quick Start
 
 1. install httpx
 
-    `pip install httpx`
-
-    `pip install tqdm`
+    `pip install -r requirements.txt`
 
 2. Open browser find out the Cookie and X-Xsrf-Token.
     ![session](./images/file.jpg)
@@ -44,8 +39,24 @@ Only support python 3.9 | 3.10 | 3.11
 - use asyncio
 - good performance
 
+## Usage
+
+1. select all subscriptions
+    - python .\candfans-dl.py
+    - enter 0
+
+2. select single subscription
+    - python .\candfans-dl.py
+    - enter 2
+
+3. select part of subscriptions
+    - python .\candfans-dl.py
+    - enter 2,3,4
+
+4. quit selecting
+    - python .\candfans-dl.py
+    - enter q
+
 ## TODO
 
 - imporve async method
-- choose more than one model everytime
-- imporve process bar
