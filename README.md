@@ -24,6 +24,14 @@ Only support python 3.9 | 3.10 | 3.11
     ![session](./images/file.jpg)
 
 3. Create auth.json file and fill in value.
+   
+   ```json
+   {
+        "Cookie": "",
+        "X-Xsrf-Token": "",
+        "User-Agent": ""
+    }
+   ```
 
     ![auth.json](./images/file.PNG)
 
