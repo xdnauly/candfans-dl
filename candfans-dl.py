@@ -95,6 +95,7 @@ def select_subscription() -> None:
     print('0  |  *** Download all ***')
     for i, sub in enumerate(subs):
         print(f'{i + 1}  |  {sub["username"]}')
+        sub = {key: str(value) for key, value in sub.items()}
         all_models.update({str(i + 1): User(**sub)})
     print('q |  quit')
 
